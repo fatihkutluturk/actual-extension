@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actual AI</title>
+  <link rel="stylesheet" href="../styles/main.css">
+  <style>
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-brand svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .header-brand span {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.03em;
+    }
+
+    .header-brand .ai-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: white;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.05em;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ─── Tab Content ─── */
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .tab-page {
+      display: none;
+      padding: 16px;
+      min-height: 100%;
+    }
+
+    .tab-page.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ─── Upload Page ─── */
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .account-selector {
+      display: flex;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .account-selector .input-group { flex: 1; }
+
+    /* ─── Review Table ─── */
+    .review-container {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .review-table-wrap {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .review-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .review-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+      padding: 8px 8px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-default);
+      z-index: 1;
+    }
+
+    .review-table td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .review-table tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    .review-table .check-col { width: 32px; text-align: center; }
+
+    .category-select {
+      font-size: 11px;
+      padding: 4px 6px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      max-width: 120px;
+    }
+
+    /* ─── Chat Page ─── */
+    #chatPage {
+      padding: 0;
+    }
+
+    #chatPage.active {
+      padding: 0;
+    }
+
+    .chat-container {
+      height: 100%;
+    }
+
+    .chat-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text-muted);
+      padding: 40px;
+      text-align: center;
+    }
+
+    .chat-empty svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.3;
+    }
+
+    .quick-prompts {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .quick-prompt {
+      font-size: 12px;
+      padding: 8px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font-sans);
+      transition: all 0.15s;
+    }
+
+    .quick-prompt:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--accent-blue);
+    }
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--accent-blue);
+    }
+
+    .next-step-prompt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      align-self: flex-start;
+    }
+
+    .next-step-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .next-step-prompt .quick-prompt {
+      font-size: 12px;
+      padding: 6px 12px;
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+    }
+
+    .next-step-prompt .quick-prompt:hover {
+      opacity: 0.9;
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .chat-typing {
+      display: flex;
+      gap: 4px;
+      padding: 10px 14px;
+      align-self: flex-start;
+    }
+
+    .chat-typing span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ─── Onboarding ─── */
+    .onboarding {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      gap: 20px;
+    }
+
+    .onboarding h2 {
+      font-size: 18px;
+    }
+
+    .setup-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .setup-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--bg-secondary);
+    }
+
+    .setup-step:hover { border-color: var(--accent-blue); }
+
+    .setup-step .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .setup-step.done .step-num {
+      background: var(--accent-green-soft);
+      color: var(--accent-green);
+    }
+
+    .setup-step .step-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .setup-step .step-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ─── Progress steps ─── */
+    .pipeline-progress {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pipeline-step.active { color: var(--accent-blue); }
+    .pipeline-step.done { color: var(--accent-green); }
+    .pipeline-step.error { color: var(--accent-red); }
+
+    /* ─── Action Confirmation Cards ─── */
+    .action-card {
+      align-self: flex-start;
+      max-width: 92%;
+      border: 1px solid var(--accent-blue);
+      border-left: 3px solid var(--accent-blue);
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      overflow: hidden;
+      animation: fadeInUp 0.2s ease;
+    }
+
+    .action-card.destructive {
+      border-color: var(--accent-red);
+      border-left-color: var(--accent-red);
+    }
+
+    .action-card.completed {
+      border-color: var(--accent-green);
+      border-left-color: var(--accent-green);
+      opacity: 0.8;
+    }
+
+    .action-card.cancelled {
+      border-color: var(--border-subtle);
+      border-left-color: var(--border-subtle);
+      opacity: 0.6;
+    }
+
+    .action-card.failed {
+      border-color: var(--accent-red);
+      border-left-color: var(--accent-red);
+    }
+
+    .action-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--accent-blue);
+    }
+
+    .action-card.destructive .action-card-header {
+      color: var(--accent-red);
+    }
+
+    .action-card-body {
+      padding: 4px 14px 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    .action-card-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 8px 14px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .action-loading {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 2px 0;
+    }
+
+    .action-loading span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .action-loading span:nth-child(2) { animation-delay: 0.2s; }
+    .action-loading span:nth-child(3) { animation-delay: 0.4s; }
+
+    .action-result {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 2px 0;
+    }
+
+    .action-result.success {
+      color: var(--accent-green);
+    }
+
+    .action-result.error {
+      color: var(--accent-red);
+      font-weight: 400;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <!-- ─── Header ─── -->
+    <div class="header">
+      <div class="header-brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+        </svg>
+        <span>Actual</span>
+        <span class="ai-badge">AI</span>
+      </div>
+      <div class="status-bar">
+        <div class="status-item" id="actualStatus">
+          <span class="status-dot disconnected" id="actualDot"></span>
+          <span id="actualStatusText">Disconnected</span>
+        </div>
+        <button class="btn-icon" id="openSettingsBtn" title="Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── Tabs ─── -->
+    <div class="tabs">
+      <button class="tab active" data-tab="upload">Import</button>
+      <button class="tab" data-tab="chat">Chat</button>
+      <button class="tab" data-tab="categorize">Categorize</button>
+      <button class="tab" data-tab="history">History</button>
+    </div>
+
+    <!-- ─── Tab Content ─── -->
+    <div class="tab-content">
+
+      <!-- IMPORT TAB -->
+      <div class="tab-page active" id="uploadPage" data-tab-page="upload">
+
+        <!-- Onboarding (shown if not configured) -->
+        <div class="onboarding" id="onboarding">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <h2>Welcome to Actual AI</h2>
+          <p class="text-secondary" style="font-size:13px; max-width:280px;">
+            Import bank statements with AI, auto-categorize transactions, and chat with your financial data.
+          </p>
+          <div class="setup-steps">
+            <div class="setup-step" id="setupGemini">
+              <span class="step-num">1</span>
+              <div>
+                <div class="step-text">Connect Google Gemini</div>
+                <div class="step-sub">Add your API key</div>
+              </div>
+            </div>
+            <div class="setup-step" id="setupActual">
+              <span class="step-num">2</span>
+              <div>
+                <div class="step-text">Connect Actual Budget</div>
+                <div class="step-sub">Server URL, budget, &amp; HTTP API key</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload UI (shown when configured) -->
+        <div class="upload-section hidden" id="uploadSection">
+          <div class="account-selector">
+            <div class="input-group">
+              <label>Target Account</label>
+              <select id="accountSelect">
+                <option value="">Select account...</option>
+              </select>
+            </div>
+            <div class="input-group" style="width: 120px;">
+              <label>Statement Type</label>
+              <select id="statementTypeSelect">
+                <option value="bank">Bank Account</option>
+                <option value="credit_card">Credit Card</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">
+            Currency: <strong id="currencyLabel">TRY</strong>
+            · <a href="#" id="changeCurrencyLink" style="color:var(--accent-blue); text-decoration:none;">change</a>
+            <div class="hidden" id="currencyOverride" style="margin-top:6px;">
+              <select id="currencySelect" style="font-size:12px; padding:4px 8px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-primary); color:var(--text-primary);">
+                <option value="TRY">TRY ₺</option>
+                <option value="USD">USD $</option>
+                <option value="EUR">EUR €</option>
+                <option value="GBP">GBP £</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Drop Zone -->
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">📄</div>
+            <div style="font-weight:500; margin-bottom:4px;">Drop bank statement PDF here</div>
+            <div class="text-muted" style="font-size:12px;">or click to browse</div>
+            <input type="file" id="fileInput" accept=".pdf" style="display:none">
+          </div>
+
+          <!-- Progress -->
+          <div class="card hidden" id="progressCard">
+            <div class="flex items-center justify-between mb-2">
+              <span style="font-weight:500;" id="progressTitle">Processing...</span>
+              <span class="text-mono text-muted" id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar mb-3">
+              <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+            </div>
+            <div class="pipeline-progress" id="pipelineSteps"></div>
+          </div>
+
+          <!-- Review Table -->
+          <div class="review-container hidden" id="reviewContainer">
+            <div class="review-header">
+              <div>
+                <span style="font-weight:500;" id="reviewTitle">Review Transactions</span>
+                <span class="text-muted" style="font-size:12px; margin-left:8px;" id="reviewCount"></span>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn btn-sm btn-secondary" id="selectAllBtn">Select All</button>
+                <button class="btn btn-sm btn-primary" id="importBtn">
+                  Import Selected
+                </button>
+              </div>
+            </div>
+            <div class="review-table-wrap">
+              <table class="review-table">
+                <thead>
+                  <tr>
+                    <th class="check-col"><input type="checkbox" id="selectAll" checked></th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th style="text-align:right">Amount</th>
+                    <th>Category</th>
+                  </tr>
+                </thead>
+                <tbody id="reviewBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Import Result Banner -->
+          <div class="hidden" id="importResultCard">
+            <div class="card" id="importResultContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT TAB -->
+      <div class="tab-page" id="chatPage" data-tab-page="chat">
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-empty" id="chatEmpty">
+              <!-- Populated dynamically by renderChatEmpty() -->
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <button class="btn-icon" id="newChatBtn" title="New conversation">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+            <input type="text" id="chatInput" placeholder="Ask a question or tell me what to do...">
+            <button class="btn btn-primary" id="chatSendBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATEGORIZE TAB -->
+      <div class="tab-page" id="categorizePage" data-tab-page="categorize">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 style="margin:0;">Auto-Categorize</h3>
+            <p class="text-muted" style="font-size:11px; margin:2px 0 0;">Find uncategorized transactions and assign categories with AI</p>
+          </div>
+          <span class="badge badge-muted" id="uncatBadge" style="display:none;"></span>
+        </div>
+
+        <div class="card">
+          <div class="flex gap-2 items-end mb-2">
+            <div class="input-group" style="flex:1;">
+              <label>Account</label>
+              <select id="catAccountSelect">
+                <option value="all">All accounts</option>
+              </select>
+            </div>
+            <div class="input-group" style="width:100px;">
+              <label>Months</label>
+              <select id="catMonthsSelect">
+                <option value="1">Last 1</option>
+                <option value="3" selected>Last 3</option>
+                <option value="6">Last 6</option>
+                <option value="12">Last 12</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="findUncatBtn" style="width:100%; background:linear-gradient(135deg, var(--accent-blue), var(--accent-purple));">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Find &amp; Categorize
+          </button>
+        </div>
+
+        <!-- Categorize Progress -->
+        <div class="card hidden" id="catProgressCard">
+          <div class="flex items-center justify-between mb-2">
+            <span style="font-weight:500;" id="catProgressTitle">Scanning...</span>
+            <span class="text-mono text-muted" id="catProgressPercent"></span>
+          </div>
+          <div class="progress-bar mb-2">
+            <div class="progress-bar-fill" id="catProgressFill" style="width:0%"></div>
+          </div>
+          <div class="text-muted" style="font-size:11px;" id="catProgressDetail"></div>
+        </div>
+
+        <!-- Categorize Review Table -->
+        <div class="review-container hidden" id="catReviewContainer">
+          <div class="review-header">
+            <div>
+              <span style="font-weight:500;" id="catReviewTitle">Review Suggested Categories</span>
+              <span class="text-muted" style="font-size:12px; margin-left:8px;" id="catReviewCount"></span>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-secondary" id="catSelectAllBtn">Select All</button>
+              <button class="btn btn-sm btn-primary" id="applyCatBtn" style="background:linear-gradient(135deg, var(--accent-blue), var(--accent-purple));">
+                Apply Selected
+              </button>
+            </div>
+          </div>
+          <div class="review-table-wrap" style="max-height:none;">
+            <table class="review-table">
+              <thead>
+                <tr>
+                  <th class="check-col"><input type="checkbox" id="catSelectAll" checked></th>
+                  <th>Date</th>
+                  <th>Payee</th>
+                  <th style="text-align:right">Amount</th>
+                  <th>Suggested Category</th>
+                </tr>
+              </thead>
+              <tbody id="catReviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY TAB -->
+      <div class="tab-page" id="historyPage" data-tab-page="history">
+        <h3 class="mb-3">Import History</h3>
+        <div id="historyList">
+          <div class="text-muted" style="text-align:center; padding:40px;">No statements imported yet.</div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border-subtle);margin:12px 0;">
+        <div class="flex items-center justify-between">
+          <p class="text-muted" style="font-size:11px; margin:0;">Data is stored locally in your browser.</p>
+          <div class="flex gap-2">
+            <button class="btn btn-sm btn-secondary" id="exportMappingsBtn">Export Mappings</button>
+            <button class="btn btn-sm btn-danger" id="clearAllDataBtn">Clear All Data</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
