@@ -64,6 +64,16 @@ function setupEventListeners() {
   // Gear icon in header — open options page
   document.getElementById('openSettingsBtn').addEventListener('click', () => openSettings());
 
+  // Capture from tab — show confirm card first
+  document.getElementById('captureTabBtn').addEventListener('click', () => showCaptureConfirm());
+  document.getElementById('captureConfirmBtn').addEventListener('click', () => captureFromTab());
+  document.getElementById('captureCancel').addEventListener('click', () => {
+    document.getElementById('captureConfirmCard').classList.add('hidden');
+  });
+  document.getElementById('clearStartDateBtn').addEventListener('click', () => {
+    document.getElementById('startDateInput').value = '';
+  });
+
   // Review table controls
   document.getElementById('selectAllBtn').addEventListener('click', () => selectAllTx(true));
   document.getElementById('importBtn').addEventListener('click', () => importSelected());
@@ -291,6 +301,117 @@ async function processFile(file) {
   }
 }
 
+// ─── Show Capture Confirm Card ───
+async function showCaptureConfirm() {
+  const accountId = document.getElementById('accountSelect').value;
+  if (!accountId) {
+    alert('Please select a target account first.');
+    return;
+  }
+
+  // Auto-populate date from latest transaction
+  const input = document.getElementById('startDateInput');
+  const date = await getLatestTransactionDate(accountId);
+  input.value = date || '';
+
+  document.getElementById('captureConfirmCard').classList.remove('hidden');
+}
+
+// ─── Capture from Tab ───
+async function captureFromTab() {
+  if (isProcessing) return;
+
+  const accountId = document.getElementById('accountSelect').value;
+  if (!accountId) {
+    alert('Please select a target account first.');
+    return;
+  }
+
+  // Hide confirm card
+  document.getElementById('captureConfirmCard').classList.add('hidden');
+
+  const currency = document.getElementById('currencySelect').value;
+  const statementType = document.getElementById('statementTypeSelect').value;
+
+  isProcessing = true;
+  const progressCard = document.getElementById('progressCard');
+  const reviewContainer = document.getElementById('reviewContainer');
+  progressCard.classList.remove('hidden');
+  reviewContainer.classList.add('hidden');
+
+  pipeline.onProgress = ({ step, message, percent }) => {
+    document.getElementById('progressTitle').textContent = message;
+    document.getElementById('progressPercent').textContent = percent !== null ? `${percent}%` : '';
+    document.getElementById('progressFill').style.width = `${percent || 0}%`;
+
+    const steps = document.getElementById('pipelineSteps');
+    const existing = steps.querySelector(`[data-step="${step}"]`);
+    if (!existing && step !== 'error') {
+      const div = document.createElement('div');
+      div.className = `pipeline-step ${percent >= 100 ? 'done' : 'active'}`;
+      div.dataset.step = step;
+      div.innerHTML = `<span>${percent >= 100 ? '✓' : '◦'}</span> ${message}`;
+      steps.appendChild(div);
+    } else if (existing) {
+      existing.className = `pipeline-step ${percent >= 100 ? 'done' : 'active'}`;
+      existing.innerHTML = `<span>${percent >= 100 ? '✓' : '◦'}</span> ${message}`;
+    }
+  };
+
+  try {
+    // Get cutoff date from the start date input
+    const cutoffDate = document.getElementById('startDateInput').value || null;
+    if (cutoffDate) {
+      pipeline._emit('filter', `Will import transactions after ${cutoffDate}`, 5);
+    }
+
+    // Capture text from the active tab via service worker
+    pipeline._emit('capture', 'Capturing text from tab...', 10);
+    const response = await chrome.runtime.sendMessage({ type: 'CAPTURE_TAB_TEXT' });
+    if (response.error) throw new Error(response.error);
+
+    const result = await pipeline.ingestFromText(
+      response.text, accountId, currency, statementType, cutoffDate
+    );
+    currentStatementId = result.statementId;
+
+    // Load parsed transactions for review
+    parsedTransactions = await database.getAllByIndex(
+      'parsedTransactions', 'statementId', currentStatementId
+    );
+
+    renderReviewTable();
+    reviewContainer.classList.remove('hidden');
+  } catch (err) {
+    alert(`Capture failed: ${err.message}`);
+    console.error(err);
+  } finally {
+    isProcessing = false;
+    setTimeout(() => {
+      progressCard.classList.add('hidden');
+      document.getElementById('pipelineSteps').innerHTML = '';
+    }, 2000);
+  }
+}
+
+async function getLatestTransactionDate(accountId) {
+  try {
+    // Query transactions from the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const startDate = sixMonthsAgo.toISOString().slice(0, 10);
+
+    const transactions = await actualClient.getTransactions(accountId, startDate);
+    if (!transactions || transactions.length === 0) return null;
+
+    // Find the max date
+    return transactions.reduce((max, tx) => tx.date > max ? tx.date : max, transactions[0].date);
+  } catch (err) {
+    console.warn('Could not determine latest transaction date:', err);
+    return null;
+  }
+}
+
 // ─── Review Table ───
 function renderReviewTable() {
   const body = document.getElementById('reviewBody');
@@ -348,14 +469,14 @@ function formatAmount(cents) {
 }
 
 // ─── Import Actions ───
-window.selectAllTx = function(checked) {
+window.selectAllTx = function (checked) {
   document.querySelectorAll('#reviewBody input[type="checkbox"]').forEach(cb => {
     cb.checked = checked;
   });
   document.getElementById('selectAll').checked = checked;
 };
 
-window.updateCategory = async function(txId, categoryId) {
+window.updateCategory = async function (txId, categoryId) {
   const tx = parsedTransactions.find(t => t.id === txId);
   if (tx) {
     tx.suggestedCategoryId = categoryId || null;
@@ -365,7 +486,7 @@ window.updateCategory = async function(txId, categoryId) {
   }
 };
 
-window.importSelected = async function() {
+window.importSelected = async function () {
   const checkboxes = document.querySelectorAll('#reviewBody input[type="checkbox"]:checked');
   const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.txId);
 
@@ -490,7 +611,7 @@ function setCatProgress(title, detail, percent) {
   document.getElementById('catProgressFill').style.width = `${percent || 0}%`;
 }
 
-window.findAndCategorize = async function() {
+window.findAndCategorize = async function () {
   if (isProcessing) return;
 
   const accountFilter = document.getElementById('catAccountSelect').value;
@@ -706,14 +827,14 @@ function renderCatReviewTable() {
   }
 }
 
-window.catSelectAllTx = function(checked) {
+window.catSelectAllTx = function (checked) {
   document.querySelectorAll('#catReviewBody input[type="checkbox"]').forEach(cb => {
     cb.checked = checked;
   });
   document.getElementById('catSelectAll').checked = checked;
 };
 
-window.applyCategorization = async function() {
+window.applyCategorization = async function () {
   const checkboxes = document.querySelectorAll('#catReviewBody input[type="checkbox"]:checked');
   const selectedIds = new Set(Array.from(checkboxes).map(cb => cb.dataset.catTxId));
 
@@ -856,7 +977,7 @@ function renderNextStepPrompt(completedAction) {
 }
 
 // ─── Chat ───
-window.askQuestion = function(question) {
+window.askQuestion = function (question) {
   document.getElementById('chatInput').value = question;
   sendChat();
 };
@@ -881,7 +1002,7 @@ function addTypingIndicator() {
   return typing;
 }
 
-window.sendChat = async function() {
+window.sendChat = async function () {
   const input = document.getElementById('chatInput');
   const question = input.value.trim();
   if (!question) return;
@@ -992,8 +1113,8 @@ function showConfirmationCard(fnName, fnArgs, context) {
     <div class="action-card-header">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         ${isDestructive
-          ? '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
-          : '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'}
+      ? '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+      : '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'}
       </svg>
       <span>${isDestructive ? 'Confirm Destructive Action' : 'Confirm Action'}</span>
     </div>
@@ -1360,7 +1481,7 @@ async function deleteStatement(statementId) {
 }
 
 // ─── Settings ───
-window.openSettings = function() {
+window.openSettings = function () {
   chrome.runtime.openOptionsPage();
 };
 
@@ -1373,7 +1494,7 @@ async function loadDefaultCurrency() {
   } catch { /* use defaults */ }
 }
 
-window.exportMappings = async function() {
+window.exportMappings = async function () {
   const mappings = await database.getAll('merchantMappings');
   const blob = new Blob([JSON.stringify(mappings, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1384,7 +1505,7 @@ window.exportMappings = async function() {
   URL.revokeObjectURL(url);
 };
 
-window.clearAllData = async function() {
+window.clearAllData = async function () {
   if (!confirm('This will delete all parsed statements, merchant mappings, and chat history. Are you sure?')) return;
 
   await database.clear('statements');

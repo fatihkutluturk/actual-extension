@@ -102,85 +102,8 @@ class IngestionPipeline {
         parseStatus: 'parsed',
       });
 
-      // ─── Step 5: Store parsed transactions ───
-      this._emit('store', `Found ${parsed.transactions.length} transactions. Processing...`, 50);
-      const parsedTxs = parsed.transactions.map(tx => ({
-        id: uuid(),
-        statementId,
-        date: tx.date,
-        amount: amountToCents(tx.amount),
-        rawDescription: tx.description,
-        balance: tx.balance ? amountToCents(tx.balance) : null,
-        type: tx.type || (tx.amount < 0 ? 'debit' : 'credit'),
-        importStatus: 'pending',
-        suggestedCategory: null,
-        suggestedCategoryId: null,
-        cleanPayee: null,
-        confidence: null,
-        createdAt: new Date().toISOString(),
-      }));
-
-      await database.putBatch('parsedTransactions', parsedTxs);
-
-      // ─── Step 6: Auto-categorize using known mappings ───
-      this._emit('categorize_local', 'Matching known merchants...', 60);
-      let uncategorized = [];
-
-      for (const tx of parsedTxs) {
-        const mapping = await database.findMerchantMapping(tx.rawDescription);
-        if (mapping) {
-          tx.cleanPayee = mapping.cleanName;
-          tx.suggestedCategoryId = mapping.actualCategoryId;
-          tx.suggestedCategory = mapping.categoryName;
-          tx.confidence = 1.0;
-          tx.mappingSource = 'local';
-          await database.put('parsedTransactions', tx);
-        } else {
-          uncategorized.push(tx);
-        }
-      }
-
-      // ─── Step 7: AI categorization for unknowns ───
-      if (uncategorized.length > 0) {
-        this._emit(
-          'categorize_ai',
-          `AI is categorizing ${uncategorized.length} new transactions...`,
-          75
-        );
-
-        try {
-          const [categories, categoryGroups] = await Promise.all([
-            actualClient.getCategories(),
-            actualClient.getCategoryGroups(),
-          ]);
-          const suggestions = await gemini.categorizeTransactions(uncategorized, categories, categoryGroups);
-
-          for (const suggestion of suggestions) {
-            const tx = parsedTxs.find(t => t.id === suggestion.transactionId);
-            if (tx) {
-              tx.cleanPayee = suggestion.cleanPayee;
-              tx.suggestedCategoryId = suggestion.categoryId;
-              tx.suggestedCategory = suggestion.categoryName;
-              tx.confidence = suggestion.confidence;
-              tx.mappingSource = 'gemini';
-              await database.put('parsedTransactions', tx);
-            }
-          }
-        } catch (err) {
-          console.warn('AI categorization failed, transactions will be uncategorized:', err);
-          // Non-fatal — user can categorize manually
-        }
-      }
-
-      // ─── Step 8: Done — ready for user review ───
-      this._emit('ready', `Ready! ${parsed.transactions.length} transactions parsed.`, 100);
-
-      return {
-        statementId,
-        transactionCount: parsed.transactions.length,
-        categorized: parsedTxs.filter(t => t.suggestedCategoryId).length,
-        uncategorized: parsedTxs.filter(t => !t.suggestedCategoryId).length,
-      };
+      // ─── Steps 5-8: Store, categorize, done ───
+      return this._categorizeAndStore(statementId, parsed.transactions);
 
     } catch (error) {
       // Update statement status on failure
@@ -251,6 +174,186 @@ class IngestionPipeline {
         }
         this._emit('validate', 'Auto-corrected credit card signs (most charges should be negative).', 40);
       }
+    }
+  }
+
+  /**
+   * Shared steps 5-8: store parsed transactions, apply merchant mappings,
+   * AI categorize, return result.
+   */
+  async _categorizeAndStore(statementId, transactions) {
+    // ─── Step 5: Store parsed transactions ───
+    this._emit('store', `Found ${transactions.length} transactions. Processing...`, 50);
+    const parsedTxs = transactions.map(tx => ({
+      id: uuid(),
+      statementId,
+      date: tx.date,
+      amount: amountToCents(tx.amount),
+      rawDescription: tx.description,
+      balance: tx.balance ? amountToCents(tx.balance) : null,
+      type: tx.type || (tx.amount < 0 ? 'debit' : 'credit'),
+      importStatus: 'pending',
+      suggestedCategory: null,
+      suggestedCategoryId: null,
+      cleanPayee: null,
+      confidence: null,
+      createdAt: new Date().toISOString(),
+    }));
+
+    await database.putBatch('parsedTransactions', parsedTxs);
+
+    // ─── Step 6: Auto-categorize using known mappings ───
+    this._emit('categorize_local', 'Matching known merchants...', 60);
+    let uncategorized = [];
+
+    for (const tx of parsedTxs) {
+      const mapping = await database.findMerchantMapping(tx.rawDescription);
+      if (mapping) {
+        tx.cleanPayee = mapping.cleanName;
+        tx.suggestedCategoryId = mapping.actualCategoryId;
+        tx.suggestedCategory = mapping.categoryName;
+        tx.confidence = 1.0;
+        tx.mappingSource = 'local';
+        await database.put('parsedTransactions', tx);
+      } else {
+        uncategorized.push(tx);
+      }
+    }
+
+    // ─── Step 7: AI categorization for unknowns ───
+    if (uncategorized.length > 0) {
+      this._emit(
+        'categorize_ai',
+        `AI is categorizing ${uncategorized.length} new transactions...`,
+        75
+      );
+
+      try {
+        const [categories, categoryGroups] = await Promise.all([
+          actualClient.getCategories(),
+          actualClient.getCategoryGroups(),
+        ]);
+        const suggestions = await gemini.categorizeTransactions(uncategorized, categories, categoryGroups);
+
+        for (const suggestion of suggestions) {
+          const tx = parsedTxs.find(t => t.id === suggestion.transactionId);
+          if (tx) {
+            tx.cleanPayee = suggestion.cleanPayee;
+            tx.suggestedCategoryId = suggestion.categoryId;
+            tx.suggestedCategory = suggestion.categoryName;
+            tx.confidence = suggestion.confidence;
+            tx.mappingSource = 'gemini';
+            await database.put('parsedTransactions', tx);
+          }
+        }
+      } catch (err) {
+        console.warn('AI categorization failed, transactions will be uncategorized:', err);
+        // Non-fatal — user can categorize manually
+      }
+    }
+
+    // ─── Step 8: Done — ready for user review ───
+    this._emit('ready', `Ready! ${transactions.length} transactions parsed.`, 100);
+
+    return {
+      statementId,
+      transactionCount: transactions.length,
+      categorized: parsedTxs.filter(t => t.suggestedCategoryId).length,
+      uncategorized: parsedTxs.filter(t => !t.suggestedCategoryId).length,
+    };
+  }
+
+  /**
+   * Ingest transactions from raw text (e.g. captured from a bank tab).
+   * Skips hash check and PDF extraction. Filters by cutoff date for dedup.
+   *
+   * @param {string} text - Raw text from the page
+   * @param {string} accountId - Target Actual Budget account ID
+   * @param {string} currency - Currency code
+   * @param {string} statementType - 'bank' or 'credit_card'
+   * @param {string|null} cutoffDate - Exclude transactions on or before this date (YYYY-MM-DD)
+   * @returns {Promise<{statementId: string, transactionCount: number}>}
+   */
+  async ingestFromText(text, accountId, currency = 'TRY', statementType = 'bank', cutoffDate = null) {
+    const statementId = uuid();
+
+    try {
+      if (!text || text.trim().length < 50) {
+        throw new Error('Not enough text captured from the page. Make sure your bank transactions are visible.');
+      }
+
+      // ─── Step 1: Save statement record ───
+      this._emit('save', 'Saving captured data...', 15);
+      await database.put('statements', {
+        id: statementId,
+        accountId,
+        fileName: 'Tab Capture',
+        fileHash: null,
+        pageCount: null,
+        rawText: text,
+        statementType,
+        source: 'tab-capture',
+        parseStatus: 'parsing',
+        createdAt: new Date().toISOString(),
+      });
+
+      // ─── Step 2: Parse with Gemini ───
+      this._emit('parse', 'AI is parsing the captured text...', 35);
+      const parsed = await gemini.parseStatement(text, currency, statementType);
+
+      if (!parsed.transactions || parsed.transactions.length === 0) {
+        await database.put('statements', {
+          ...(await database.get('statements', statementId)),
+          parseStatus: 'failed',
+        });
+        throw new Error('AI could not find any transactions in the captured text.');
+      }
+
+      // ─── Step 2b: Validate signs ───
+      this._validateSigns(parsed, statementType);
+
+      // ─── Step 3: Filter by cutoff date ───
+      if (cutoffDate) {
+        const before = parsed.transactions.length;
+        parsed.transactions = parsed.transactions.filter(tx => tx.date > cutoffDate);
+        const filtered = before - parsed.transactions.length;
+        if (filtered > 0) {
+          this._emit('filter', `Filtered out ${filtered} transactions on or before ${cutoffDate}.`, 45);
+        }
+      }
+
+      if (parsed.transactions.length === 0) {
+        await database.put('statements', {
+          ...(await database.get('statements', statementId)),
+          parseStatus: 'no_new',
+        });
+        throw new Error('No new transactions found after the latest imported date.');
+      }
+
+      // Update statement with parsed metadata
+      await database.put('statements', {
+        ...(await database.get('statements', statementId)),
+        bankName: parsed.bankName,
+        accountNumber: parsed.accountNumber,
+        periodStart: parsed.periodStart,
+        periodEnd: parsed.periodEnd,
+        transactionCount: parsed.transactions.length,
+        parseStatus: 'parsed',
+      });
+
+      // ─── Steps 4-7: Store, categorize, done ───
+      return this._categorizeAndStore(statementId, parsed.transactions);
+
+    } catch (error) {
+      try {
+        const stmt = await database.get('statements', statementId);
+        if (stmt) {
+          await database.put('statements', { ...stmt, parseStatus: 'failed' });
+        }
+      } catch { /* ignore */ }
+
+      this._emit('error', error.message, 0);
+      throw error;
     }
   }
 

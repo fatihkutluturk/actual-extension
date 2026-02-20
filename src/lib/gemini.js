@@ -14,11 +14,11 @@ const DEFAULT_PARSE_MODEL = 'gemini-2.0-flash';
  * Each entry can optionally flag whether it supports tool/function calling.
  */
 const SUPPORTED_MODELS = [
-  { id: 'gemini-2.5-flash',      label: 'Gemini 2.5 Flash (latest)',        tools: true },
-  { id: 'gemini-2.5-pro',        label: 'Gemini 2.5 Pro (highest quality)', tools: true },
-  { id: 'gemini-2.0-flash',      label: 'Gemini 2.0 Flash (recommended)',   tools: true },
-  { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (fastest)',  tools: true },
-  { id: 'gemini-1.5-pro',        label: 'Gemini 1.5 Pro',                   tools: true },
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (latest)', tools: true },
+  { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (highest quality)', tools: true },
+  { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (recommended)', tools: true },
+  { id: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (fastest)', tools: true },
+  { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', tools: true },
 ];
 
 class GeminiService {
@@ -176,7 +176,14 @@ Return this exact JSON structure:
     );
 
     try {
-      return JSON.parse(text.replace(/```json\n?|```/g, '').trim());
+      let cleaned = text.replace(/```json\n?|```/g, '').trim();
+      // Sanitize control characters inside JSON string values (tabs, newlines, etc.)
+      // that Gemini sometimes emits when bank descriptions contain special chars.
+      cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, (ch) => {
+        if (ch === '\n' || ch === '\r' || ch === '\t') return ' ';
+        return '';
+      });
+      return JSON.parse(cleaned);
     } catch (e) {
       throw new Error(`Failed to parse Gemini response as JSON: ${e.message}`);
     }
@@ -259,7 +266,12 @@ Return JSON array:
     );
 
     try {
-      return JSON.parse(text.replace(/```json\n?|```/g, '').trim());
+      let cleaned = text.replace(/```json\n?|```/g, '').trim();
+      cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, (ch) => {
+        if (ch === '\n' || ch === '\r' || ch === '\t') return ' ';
+        return '';
+      });
+      return JSON.parse(cleaned);
     } catch (e) {
       throw new Error(`Failed to parse categorization response: ${e.message}`);
     }
@@ -612,7 +624,8 @@ Include: total income, total expenses, net, top spending categories, and any not
     const body = {
       contents: [{
         role: 'user',
-        parts: [{ text: `What is the real business behind this bank statement merchant name: "${merchantName}"?${countryHint}
+        parts: [{
+          text: `What is the real business behind this bank statement merchant name: "${merchantName}"?${countryHint}
 
 Please identify:
 1. The real business/company name

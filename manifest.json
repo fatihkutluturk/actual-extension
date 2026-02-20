@@ -6,12 +6,14 @@
   "permissions": [
     "storage",
     "sidePanel",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
     "http://localhost:*/*",
-    "http://127.0.0.1:*/*"
+    "http://127.0.0.1:*/*",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",

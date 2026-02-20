@@ -31,6 +31,9 @@ async function handleMessage(message) {
     case 'VALIDATE_GEMINI_KEY':
       return validateGeminiKey(message.payload.apiKey);
 
+    case 'CAPTURE_TAB_TEXT':
+      return captureTabText();
+
     default:
       return { error: `Unknown message type: ${message.type}` };
   }
@@ -97,6 +100,31 @@ async function validateGeminiKey(apiKey) {
   } catch {
     return { valid: false };
   }
+}
+
+async function captureTabText() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) throw new Error('No active tab found.');
+
+  if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+    throw new Error('Cannot capture text from this page. Navigate to your bank website first.');
+  }
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id, allFrames: true },
+    func: () => document.body?.innerText || '',
+  });
+
+  // Concatenate text from all frames (top-level + iframes)
+  const text = results
+    ?.map(r => r.result)
+    .filter(Boolean)
+    .join('\n');
+  if (!text || text.trim().length < 20) {
+    throw new Error('No meaningful text found on the page. Make sure your bank transactions are visible.');
+  }
+
+  return { text, url: tab.url, title: tab.title };
 }
 
 console.log('Actual AI service worker loaded');

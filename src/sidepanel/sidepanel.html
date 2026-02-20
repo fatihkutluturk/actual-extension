@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Actual AI</title>
   <link rel="stylesheet" href="../styles/main.css">
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
       overflow: hidden;
     }
@@ -100,7 +102,9 @@
       align-items: end;
     }
 
-    .account-selector .input-group { flex: 1; }
+    .account-selector .input-group {
+      flex: 1;
+    }
 
     /* ─── Review Table ─── */
     .review-container {
@@ -153,7 +157,10 @@
       background: var(--bg-hover);
     }
 
-    .review-table .check-col { width: 32px; text-align: center; }
+    .review-table .check-col {
+      width: 32px;
+      text-align: center;
+    }
 
     .category-select {
       font-size: 11px;
@@ -287,12 +294,27 @@
       animation: typing 1.4s infinite ease-in-out;
     }
 
-    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+    .chat-typing span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chat-typing span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
 
     @keyframes typing {
-      0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
-      40% { transform: scale(1); opacity: 1; }
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0.7);
+        opacity: 0.4;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
     /* ─── Onboarding ─── */
@@ -332,7 +354,9 @@
       background: var(--bg-secondary);
     }
 
-    .setup-step:hover { border-color: var(--accent-blue); }
+    .setup-step:hover {
+      border-color: var(--accent-blue);
+    }
 
     .setup-step .step-num {
       width: 28px;
@@ -378,9 +402,17 @@
       color: var(--text-muted);
     }
 
-    .pipeline-step.active { color: var(--accent-blue); }
-    .pipeline-step.done { color: var(--accent-green); }
-    .pipeline-step.error { color: var(--accent-red); }
+    .pipeline-step.active {
+      color: var(--accent-blue);
+    }
+
+    .pipeline-step.done {
+      color: var(--accent-green);
+    }
+
+    .pipeline-step.error {
+      color: var(--accent-red);
+    }
 
     /* ─── Action Confirmation Cards ─── */
     .action-card {
@@ -465,8 +497,13 @@
       animation: typing 1.4s infinite ease-in-out;
     }
 
-    .action-loading span:nth-child(2) { animation-delay: 0.2s; }
-    .action-loading span:nth-child(3) { animation-delay: 0.4s; }
+    .action-loading span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .action-loading span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
 
     .action-result {
       font-size: 12px;
@@ -483,17 +520,112 @@
       font-weight: 400;
       font-size: 11px;
     }
+
+    /* ─── Capture Confirm Card ─── */
+    .capture-confirm {
+      border: 1px solid var(--accent-blue);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      overflow: hidden;
+      animation: fadeInUp 0.2s ease;
+    }
+
+    .capture-confirm-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .capture-confirm-header svg {
+      color: var(--accent-blue);
+      flex-shrink: 0;
+    }
+
+    .capture-confirm-body {
+      padding: 4px 14px 14px;
+    }
+
+    .capture-confirm-body .date-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .capture-date-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .capture-date-row input[type="date"] {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 8px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .capture-date-row input[type="date"]:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px var(--accent-blue-soft);
+    }
+
+    .capture-date-row input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+
+    .capture-date-clear {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+
+    .capture-date-clear:hover {
+      background: var(--accent-red-soft);
+      color: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+
+    .capture-confirm-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 10px 14px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border-subtle);
+    }
   </style>
 </head>
+
 <body>
   <div class="shell">
     <!-- ─── Header ─── -->
     <div class="header">
       <div class="header-brand">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
         </svg>
         <span>Actual</span>
         <span class="ai-badge">AI</span>
@@ -504,8 +636,11 @@
           <span id="actualStatusText">Disconnected</span>
         </div>
         <button class="btn-icon" id="openSettingsBtn" title="Settings">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </button>
       </div>
@@ -527,9 +662,10 @@
 
         <!-- Onboarding (shown if not configured) -->
         <div class="onboarding" id="onboarding">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="m9 12 2 2 4-4"/>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m9 12 2 2 4-4" />
           </svg>
           <h2>Welcome to Actual AI</h2>
           <p class="text-secondary" style="font-size:13px; max-width:280px;">
@@ -574,7 +710,8 @@
             Currency: <strong id="currencyLabel">TRY</strong>
             · <a href="#" id="changeCurrencyLink" style="color:var(--accent-blue); text-decoration:none;">change</a>
             <div class="hidden" id="currencyOverride" style="margin-top:6px;">
-              <select id="currencySelect" style="font-size:12px; padding:4px 8px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-primary); color:var(--text-primary);">
+              <select id="currencySelect"
+                style="font-size:12px; padding:4px 8px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); background:var(--bg-primary); color:var(--text-primary);">
                 <option value="TRY">TRY ₺</option>
                 <option value="USD">USD $</option>
                 <option value="EUR">EUR €</option>
@@ -589,6 +726,46 @@
             <div style="font-weight:500; margin-bottom:4px;">Drop bank statement PDF here</div>
             <div class="text-muted" style="font-size:12px;">or click to browse</div>
             <input type="file" id="fileInput" accept=".pdf" style="display:none">
+          </div>
+
+          <div style="text-align:center; margin:8px 0; color:var(--text-secondary); font-size:12px;">— or —</div>
+
+          <button class="btn btn-secondary" id="captureTabBtn"
+            style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <span style="font-size:16px;">🖥</span> Capture from Open Bank Tab
+          </button>
+
+          <!-- Capture Confirm Card (shown after clicking Capture) -->
+          <div class="capture-confirm hidden" id="captureConfirmCard">
+            <div class="capture-confirm-header">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              Import Start Date
+            </div>
+            <div class="capture-confirm-body">
+              <div class="date-hint">Only transactions <strong>after</strong> this date will be imported. Clear to
+                import all.</div>
+              <div class="capture-date-row">
+                <input type="date" id="startDateInput">
+                <button class="capture-date-clear" id="clearStartDateBtn" title="Clear date">✕</button>
+              </div>
+            </div>
+            <div class="capture-confirm-actions">
+              <button class="btn btn-sm btn-secondary" id="captureCancel">Cancel</button>
+              <button class="btn btn-sm btn-primary" id="captureConfirmBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                  style="vertical-align:-2px; margin-right:2px;">
+                  <path d="M22 2 11 13" />
+                  <path d="m22 2-7 20-4-9-9-4Z" />
+                </svg>
+                Continue
+              </button>
+            </div>
           </div>
 
           <!-- Progress -->
@@ -650,13 +827,18 @@
           </div>
           <div class="chat-input-row">
             <button class="btn-icon" id="newChatBtn" title="New conversation">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
             </button>
             <input type="text" id="chatInput" placeholder="Ask a question or tell me what to do...">
             <button class="btn btn-primary" id="chatSendBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2 11 13" />
+                <path d="m22 2-7 20-4-9-9-4Z" />
+              </svg>
             </button>
           </div>
         </div>
@@ -667,7 +849,8 @@
         <div class="flex items-center justify-between mb-2">
           <div>
             <h3 style="margin:0;">Auto-Categorize</h3>
-            <p class="text-muted" style="font-size:11px; margin:2px 0 0;">Find uncategorized transactions and assign categories with AI</p>
+            <p class="text-muted" style="font-size:11px; margin:2px 0 0;">Find uncategorized transactions and assign
+              categories with AI</p>
           </div>
           <span class="badge badge-muted" id="uncatBadge" style="display:none;"></span>
         </div>
@@ -690,8 +873,13 @@
               </select>
             </div>
           </div>
-          <button class="btn btn-primary" id="findUncatBtn" style="width:100%; background:linear-gradient(135deg, var(--accent-blue), var(--accent-purple));">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <button class="btn btn-primary" id="findUncatBtn"
+            style="width:100%; background:linear-gradient(135deg, var(--accent-blue), var(--accent-purple));">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              style="vertical-align:-2px; margin-right:4px;">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
             Find &amp; Categorize
           </button>
         </div>
@@ -717,7 +905,8 @@
             </div>
             <div class="flex gap-2">
               <button class="btn btn-sm btn-secondary" id="catSelectAllBtn">Select All</button>
-              <button class="btn btn-sm btn-primary" id="applyCatBtn" style="background:linear-gradient(135deg, var(--accent-blue), var(--accent-purple));">
+              <button class="btn btn-sm btn-primary" id="applyCatBtn"
+                style="background:linear-gradient(135deg, var(--accent-blue), var(--accent-purple));">
                 Apply Selected
               </button>
             </div>
@@ -760,4 +949,5 @@
 
   <script type="module" src="sidepanel.js"></script>
 </body>
+
 </html>
