@@ -235,21 +235,27 @@ RULES:
 - Also suggest a clean merchant name
 - Respond ONLY with valid JSON, no markdown fences`;
 
-    const txList = transactions.map(t => ({
-      id: t.id,
-      description: t.rawDescription || t.description,
-      amount: t.amount,
-      date: t.date,
-    }));
+    // Use simple sequential indices instead of UUIDs — LLMs are unreliable
+    // at echoing back long UUIDs, causing match failures downstream.
+    const idMap = {}; // index → original ID
+    const txList = transactions.map((t, i) => {
+      idMap[String(i)] = t.id;
+      return {
+        id: i,
+        description: t.rawDescription || t.description,
+        amount: t.amount,
+        date: t.date,
+      };
+    });
 
-    const userPrompt = `Categorize these transactions:
+    const userPrompt = `Categorize these ${txList.length} transactions:
 
 ${JSON.stringify(txList, null, 2)}
 
-Return JSON array:
+Return a JSON array with exactly ${txList.length} items, one per transaction, in the same order:
 [
   {
-    "transactionId": "id",
+    "transactionId": 0,
     "categoryId": "matched category id",
     "categoryName": "matched category name",
     "cleanPayee": "cleaned merchant name",
@@ -271,7 +277,16 @@ Return JSON array:
         if (ch === '\n' || ch === '\r' || ch === '\t') return ' ';
         return '';
       });
-      return JSON.parse(cleaned);
+      const results = JSON.parse(cleaned);
+
+      // Map sequential indices back to original IDs
+      for (const r of results) {
+        const key = String(r.transactionId);
+        if (idMap[key]) {
+          r.transactionId = idMap[key];
+        }
+      }
+      return results;
     } catch (e) {
       throw new Error(`Failed to parse categorization response: ${e.message}`);
     }
