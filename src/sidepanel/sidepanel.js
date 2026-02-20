@@ -700,7 +700,7 @@ window.findAndCategorize = async function () {
     document.getElementById('uncatBadge').className = 'badge badge-amber';
 
     // Step 4: Categorize with AI in batches
-    const BATCH_SIZE = 40;
+    const BATCH_SIZE = 15;
     const allResults = [];
     const totalBatches = Math.ceil(allUncategorized.length / BATCH_SIZE);
 

@@ -223,45 +223,45 @@ Return this exact JSON structure:
       categoryList = categories.map(c => `- ${c.name} (id: ${c.id})`).join('\n');
     }
 
-    const systemPrompt = `You are a financial categorization engine. Given transactions and available categories (organized by group), assign the most appropriate category to each transaction.
+    const systemPrompt = `You are a financial categorization engine. Given a numbered list of transactions and available categories (organized by group), assign the most appropriate category to each transaction.
 
 Available categories:
 ${categoryList}
 
 RULES:
-- Match each transaction to exactly one category using the group context to pick the best fit
-- Use the category id in your response
-- Include a confidence score (0.0 to 1.0)
-- Also suggest a clean merchant name
-- Respond ONLY with valid JSON, no markdown fences`;
+- You MUST return exactly one result for EVERY transaction in the input list, in the SAME ORDER.
+- Match each transaction to exactly one category using the group context to pick the best fit.
+- Use the category id in your response.
+- Include a confidence score (0.0 to 1.0).
+- Also suggest a clean, human-readable merchant/payee name.
+- If you are unsure, still pick your best guess with a low confidence score. NEVER skip a transaction.
+- Respond ONLY with valid JSON, no markdown fences.`;
 
-    // Use simple sequential indices instead of UUIDs — LLMs are unreliable
-    // at echoing back long UUIDs, causing match failures downstream.
-    const idMap = {}; // index → original ID
-    const txList = transactions.map((t, i) => {
-      idMap[String(i)] = t.id;
-      return {
-        id: i,
-        description: t.rawDescription || t.description,
-        amount: t.amount,
-        date: t.date,
-      };
-    });
+    // Build a lean list — no IDs (LLMs are bad at echoing them back).
+    // We match results by array position instead.
+    const originalIds = transactions.map(t => t.id);
+    const txList = transactions.map((t, i) => ({
+      '#': i + 1,
+      description: t.rawDescription || t.description,
+      amount: t.amount,
+      date: t.date,
+    }));
 
-    const userPrompt = `Categorize these ${txList.length} transactions:
+    const userPrompt = `Categorize ALL ${txList.length} transactions below. You MUST return exactly ${txList.length} results.
 
 ${JSON.stringify(txList, null, 2)}
 
-Return a JSON array with exactly ${txList.length} items, one per transaction, in the same order:
+Return a JSON array with EXACTLY ${txList.length} objects in the SAME ORDER as the input:
 [
   {
-    "transactionId": 0,
     "categoryId": "matched category id",
     "categoryName": "matched category name",
     "cleanPayee": "cleaned merchant name",
     "confidence": 0.95
   }
-]`;
+]
+
+IMPORTANT: The array MUST have exactly ${txList.length} items. Do NOT skip any transaction.`;
 
     const text = await this._request(
       [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -279,14 +279,21 @@ Return a JSON array with exactly ${txList.length} items, one per transaction, in
       });
       const results = JSON.parse(cleaned);
 
-      // Map sequential indices back to original IDs
-      for (const r of results) {
-        const key = String(r.transactionId);
-        if (idMap[key]) {
-          r.transactionId = idMap[key];
+      // Match by array position — attach original transaction IDs
+      const mapped = [];
+      for (let i = 0; i < originalIds.length; i++) {
+        if (i < results.length) {
+          mapped.push({
+            transactionId: originalIds[i],
+            categoryId: results[i].categoryId || null,
+            categoryName: results[i].categoryName || null,
+            cleanPayee: results[i].cleanPayee || null,
+            confidence: results[i].confidence || 0,
+          });
         }
+        // If Gemini returned fewer items, those transactions simply won't appear in results
       }
-      return results;
+      return mapped;
     } catch (e) {
       throw new Error(`Failed to parse categorization response: ${e.message}`);
     }
