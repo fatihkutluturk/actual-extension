@@ -70,9 +70,10 @@ class GeminiService {
     };
 
     // Gemini 2.5 models use "thinking" tokens that count against maxOutputTokens.
-    // For structured JSON output, disable thinking to avoid truncated responses.
+    // For structured JSON output, minimize thinking to avoid truncated responses.
+    // 2.5 Pro requires thinking (budget > 0), so use a small budget rather than 0.
     if (is25Model && generationConfig.responseMimeType === 'application/json') {
-      body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      body.generationConfig.thinkingConfig = { thinkingBudget: 1024 };
     }
 
     if (systemInstruction) {
