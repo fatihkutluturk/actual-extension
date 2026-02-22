@@ -58,15 +58,22 @@ class GeminiService {
 
     const model = modelOverride || this.chatModel;
     const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${this.apiKey}`;
+    const is25Model = model.includes('2.5');
 
     const body = {
       contents,
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 8192,
+        maxOutputTokens: is25Model ? 65536 : 8192,
         ...generationConfig,
       },
     };
+
+    // Gemini 2.5 models use "thinking" tokens that count against maxOutputTokens.
+    // For structured JSON output, disable thinking to avoid truncated responses.
+    if (is25Model && generationConfig.responseMimeType === 'application/json') {
+      body.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
 
     if (systemInstruction) {
       body.systemInstruction = {
