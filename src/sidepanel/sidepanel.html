@@ -614,6 +614,53 @@
       background: var(--bg-elevated);
       border-top: 1px solid var(--border-subtle);
     }
+
+    /* ─── Statement Type Toggle ─── */
+    .statement-type-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .statement-type-toggle label.input-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.15s;
+    }
+
+    .toggle-wrapper:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .toggle-option {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 8px;
+      border-radius: 3px;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .toggle-option.active {
+      background: var(--accent-blue);
+      color: white;
+    }
   </style>
 </head>
 
@@ -698,12 +745,12 @@
                 <option value="">Select account...</option>
               </select>
             </div>
-            <div class="input-group" style="width: 120px;">
-              <label>Statement Type</label>
-              <select id="statementTypeSelect">
-                <option value="bank">Bank Account</option>
-                <option value="credit_card">Credit Card</option>
-              </select>
+            <div class="statement-type-toggle">
+              <label class="input-label">Statement Type</label>
+              <div class="toggle-wrapper" id="statementTypeToggle" data-value="bank">
+                <span class="toggle-option active" data-val="bank">Bank</span>
+                <span class="toggle-option" data-val="credit_card">CC</span>
+              </div>
             </div>
           </div>
           <div style="font-size:11px; color:var(--text-muted);">

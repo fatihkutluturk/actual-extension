@@ -111,6 +111,18 @@ function setupEventListeners() {
   // Data management
   document.getElementById('exportMappingsBtn').addEventListener('click', () => exportMappings());
   document.getElementById('clearAllDataBtn').addEventListener('click', () => clearAllData());
+
+  // Statement type toggle
+  document.getElementById('statementTypeToggle').addEventListener('click', (e) => {
+    const toggle = document.getElementById('statementTypeToggle');
+    const options = toggle.querySelectorAll('.toggle-option');
+    const current = toggle.dataset.value;
+    const next = current === 'bank' ? 'credit_card' : 'bank';
+    toggle.dataset.value = next;
+    options.forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.val === next);
+    });
+  });
 }
 
 // ─── Tab Navigation ───
@@ -249,7 +261,7 @@ async function processFile(file) {
   }
 
   const currency = document.getElementById('currencySelect').value;
-  const statementType = document.getElementById('statementTypeSelect').value;
+  const statementType = document.getElementById('statementTypeToggle').dataset.value;
 
   isProcessing = true;
   const progressCard = document.getElementById('progressCard');
@@ -331,7 +343,7 @@ async function captureFromTab() {
   document.getElementById('captureConfirmCard').classList.add('hidden');
 
   const currency = document.getElementById('currencySelect').value;
-  const statementType = document.getElementById('statementTypeSelect').value;
+  const statementType = document.getElementById('statementTypeToggle').dataset.value;
 
   isProcessing = true;
   const progressCard = document.getElementById('progressCard');
